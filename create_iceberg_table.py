@@ -1,15 +1,20 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import DoubleType, FloatType, LongType, StructType,StructField, StringType
 
-# Create new Catalog
+# Create new Catalog with Spark + S3/MinIO
+# To insert in local filesystem -> .config("spark.sql.catalog.iceberg_catalog.warehouse", "/home/iceberg/iceberg_warehouse")\
+
 spark = SparkSession.builder \
     .appName("iceberg_catalog") \
     .config("spark.sql.catalog.iceberg_catalog", "org.apache.iceberg.spark.SparkCatalog") \
     .config("spark.sql.catalog.iceberg_catalog.type", "hadoop") \
-    .config("spark.sql.catalog.iceberg_catalog.warehouse", "/home/iceberg/iceberg_warehouse") \
+    .config("spark.sql.catalog.iceberg_catalog.warehouse", "s3://warehouse/") \
+    .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000") \
+    .config("spark.hadoop.fs.s3a.access.key", "admin") \
+    .config("spark.hadoop.fs.s3a.secret.key", "password") \
+    .config("spark.hadoop.fs.s3a.path.style.access", "true") \
     .getOrCreate()
 
-# Create new Iceberg Table
 schema = StructType([
   StructField("vendor_id", LongType(), True),
   StructField("trip_id", LongType(), True),
@@ -18,8 +23,9 @@ schema = StructType([
   StructField("store_and_fwd_flag", StringType(), True)
 ])
 
-df = spark.createDataFrame([], schema)
-df.writeTo("iceberg_catalog.nyc.taxis").create()
+if not spark.catalog.tableExists("iceberg_catalog.nyc.taxis"):
+    df_empty = spark.createDataFrame([], schema)
+    df_empty.writeTo("iceberg_catalog.nyc.taxis").create()
 
 # Check Catalog has been successfully created
 spark.sql("SHOW CATALOGS").show()

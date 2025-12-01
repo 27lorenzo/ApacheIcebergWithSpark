@@ -4,12 +4,7 @@ Simple example trying **Apache Iceberg** with **PySpark**: creating catalogs, ta
 
 ## Features
 
-- Create an Iceberg catalog in Spark
+- Create an Iceberg catalog in Spark using MinIO as Object Storage
 - Define and create an Iceberg table
 - Insert sample NYC taxi data
 - Verify catalog creation
-
-## Usage
-
-```bash
-spark-submit create_iceberg_table.py
